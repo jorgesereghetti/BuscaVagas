@@ -1,0 +1,27 @@
+# Segredos / credenciais
+.env
+.env.*
+!.env.example
+
+# Banco de dados local
+vagas.db
+vagas.db-wal
+vagas.db-shm
+backend/config.json
+backend/config.json.lock
+backend/resume.txt
+*.db-wal
+*.db-shm
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Editor
+.claude/settings.local.json
+.gstack/
+
+# Test artifacts
+.pytest_cache/

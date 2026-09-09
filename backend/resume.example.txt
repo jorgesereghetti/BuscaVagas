@@ -1,0 +1,19 @@
+SEU NOME
+Cargo ou área desejada
+Cidade/estado e modelos de trabalho aceitos
+
+RESUMO PROFISSIONAL
+Descreva objetivamente sua experiência e seus objetivos.
+
+EXPERIÊNCIA
+- Empresa ou projeto — função — período
+- Principais responsabilidades, resultados e ferramentas utilizadas
+
+COMPETÊNCIAS
+- Ferramentas, tecnologias e conhecimentos relevantes
+
+FORMAÇÃO E CERTIFICAÇÕES
+- Curso — instituição — ano
+
+IDIOMAS
+- Idioma — nível

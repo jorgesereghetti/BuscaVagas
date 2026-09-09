@@ -1,0 +1,35 @@
+{
+  "gupy_queries": [
+    "nocode",
+    "lowcode",
+    "automação de processos"
+  ],
+  "linkedin_queries": [
+    "nocode",
+    "lowcode",
+    "automação de processos"
+  ],
+  "remotar_queries": [
+    "automação",
+    "nocode"
+  ],
+  "programathor_queries": [
+    "automação",
+    "nocode"
+  ],
+  "excluded_keywords": [
+    "estágio",
+    "gerente",
+    "sênior"
+  ],
+  "policy": {
+    "max_job_age_days": 7,
+    "filter_gupy_by_date": false,
+    "allow_unknown_location": true,
+    "min_match_score": 50,
+    "exclude_traditional_dev": true,
+    "allowed_locations": [
+      "são paulo"
+    ]
+  }
+}

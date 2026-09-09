@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Radar de Vagas — IA, Nocode & Automação</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400;1,700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Scanner top progress bar (visible when scanner is running) -->
+  <div class="scanline" id="scanline" hidden></div>
+
+  <div class="app-root">
+
+    <!-- ================= HEADER ================= -->
+    <header class="app-header">
+      <div class="header-brand">
+        <h1 class="brand-title">Radar de Vagas</h1>
+        <span class="brand-subtitle mono">nocode · vibecoding · automação</span>
+      </div>
+
+      <div class="header-controls">
+        <!-- Scan status and trigger -->
+        <div class="scan-pill">
+          <span class="scan-dot" id="scan-dot"></span>
+          <span class="scan-text mono" id="scan-text">agente ocioso</span>
+          <button type="button" class="btn-scan mono" id="btn-scan">Rastrear vagas</button>
+        </div>
+
+        <div class="view-switch">
+          <button type="button" class="seg-btn is-active mono" id="btn-view-painel">Painel</button>
+          <button type="button" class="seg-btn mono" id="btn-view-kanban">Kanban</button>
+        </div>
+
+        <!-- Theme toggle (Dark by default) -->
+        <button type="button" class="icon-btn mono" id="btn-theme" title="Alternar tema">☾</button>
+
+        <!-- Settings drawer toggle -->
+        <button type="button" class="icon-btn mono" id="btn-config" title="Configurações & Currículo">⚙</button>
+      </div>
+    </header>
+
+    <!-- ================= STATS BAR ================= -->
+    <div class="stats-bar">
+      <div class="stats-group">
+        <div class="stat-item">
+          <span class="stat-val mono" id="stat-total">0</span>
+          <span class="stat-lbl mono">vagas na janela</span>
+        </div>
+        <div class="stat-sep"></div>
+        <div class="stat-item">
+          <span class="stat-val mono stat-accent" id="stat-novas">0</span>
+          <span class="stat-lbl mono">novas</span>
+        </div>
+        <div class="stat-sep"></div>
+        <div class="stat-item">
+          <span class="stat-val mono" id="stat-candidaturas">0</span>
+          <span class="stat-lbl mono">candidaturas</span>
+        </div>
+        <div class="stat-sep"></div>
+        <div class="stat-item">
+          <span class="stat-val mono" id="stat-match">0%</span>
+          <span class="stat-lbl mono">match médio</span>
+        </div>
+      </div>
+
+      <div class="collection-meta">
+        <span class="collection-lbl mono">coleta</span>
+        <span class="collection-time mono" id="stat-last-scan">hoje</span>
+        <span class="live-dot" id="live-dot"></span>
+      </div>
+    </div>
+
+    <!-- ================= FILTER & SEARCH BAR ================= -->
+    <div class="filter-bar">
+      <div class="filter-controls-group">
+        <div class="pillars-list" id="pillars-list">
+          <button type="button" class="pillar-btn is-active mono" data-pillar="todos">Todos</button>
+          <button type="button" class="pillar-btn mono" data-pillar="nocode">Nocode / Lowcode</button>
+          <button type="button" class="pillar-btn mono" data-pillar="vibecoding">Vibecoding</button>
+          <button type="button" class="pillar-btn mono" data-pillar="automacao">Agentes & Automação IA</button>
+        </div>
+
+        <div class="workplace-list" id="workplace-list">
+          <button type="button" class="workplace-btn is-active mono" data-workplace="todos">Todos Modelos</button>
+          <button type="button" class="workplace-btn mono" data-workplace="remoto">100% Remoto</button>
+          <button type="button" class="workplace-btn mono" data-workplace="hibrido">Híbrido SP</button>
+          <button type="button" class="workplace-btn mono" data-workplace="presencial">Presencial</button>
+        </div>
+      </div>
+
+      <div class="search-box">
+        <span class="search-prefix mono">/</span>
+        <input type="text" id="search-input" placeholder="buscar por cargo, empresa, stack, skills..." autocomplete="off" spellcheck="false">
+      </div>
+    </div>
+
+    <!-- ================= VIEW: PAINEL (LISTA/TABELA) ================= -->
+    <section class="view-section" id="view-painel">
+      <div class="tabs-nav-row" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div class="tabs-nav" id="tabs-nav">
+          <button type="button" class="tab-btn is-active" data-tab="nova">
+            Novas <span class="tab-count mono" id="count-nova">0</span>
+          </button>
+          <button type="button" class="tab-btn" data-tab="enviada">
+            Enviadas <span class="tab-count mono" id="count-enviada">0</span>
+          </button>
+          <button type="button" class="tab-btn" data-tab="oculta">
+            Não Compatíveis <span class="tab-count mono" id="count-oculta">0</span>
+          </button>
+        </div>
+        <button type="button" class="action-btn-sm mono" id="btn-export-csv" title="Exportar candidaturas para CSV" style="padding:6px 12px;width:auto;height:auto;font-size:11px">
+          ↓ Exportar CSV
+        </button>
+      </div>
+
+      <!-- Table Header -->
+      <div class="table-header">
+        <div class="th-col mono">match</div>
+        <div class="th-col mono">vaga</div>
+        <div class="th-col mono">stack</div>
+        <div class="th-col mono">salário</div>
+        <div class="th-col mono">origem</div>
+        <div class="th-col mono th-right">ações</div>
+      </div>
+
+      <!-- Jobs List Table Body -->
+      <div class="jobs-table-body" id="jobs-table-body">
+        <!-- Rendered dynamically via app.js -->
+      </div>
+
+      <!-- Empty State -->
+      <div class="empty-state" id="table-empty" hidden>
+        <div class="empty-title" id="empty-title">Nenhuma vaga neste estado</div>
+        <div class="empty-hint" id="empty-hint">A automação rastreia vagas no Gupy e LinkedIn — clique em "Rastrear vagas" para buscar novas oportunidades.</div>
+      </div>
+    </section>
+
+    <!-- ================= VIEW: KANBAN ================= -->
+    <section class="view-section" id="view-kanban" hidden>
+      <div class="kanban-grid" id="kanban-grid">
+        <!-- Column 1: Nova -->
+        <div class="kanban-col" data-col="nova">
+          <div class="kanban-col-header">
+            <div class="kanban-col-title-wrap">
+              <span class="kanban-dot dot-acid"></span>
+              <span class="kanban-col-title mono">Novas</span>
+            </div>
+            <span class="kanban-count mono" id="kanban-count-nova">0</span>
+          </div>
+          <div class="kanban-col-cards" id="kanban-cards-nova"></div>
+        </div>
+
+        <!-- Column 2: Enviada -->
+        <div class="kanban-col" data-col="enviada">
+          <div class="kanban-col-header">
+            <div class="kanban-col-title-wrap">
+              <span class="kanban-dot dot-accent"></span>
+              <span class="kanban-col-title mono">Enviadas</span>
+            </div>
+            <span class="kanban-count mono" id="kanban-count-enviada">0</span>
+          </div>
+          <div class="kanban-col-cards" id="kanban-cards-enviada"></div>
+        </div>
+        <!-- Column 3: Não Compatível (Ocultadas / Descartadas) -->
+        <div class="kanban-col" data-col="oculta">
+          <div class="kanban-col-header">
+            <div class="kanban-col-title-wrap">
+              <span class="kanban-dot dot-flag"></span>
+              <span class="kanban-col-title mono">Não Compatível</span>
+            </div>
+            <span class="kanban-count mono" id="kanban-count-oculta">0</span>
+          </div>
+          <div class="kanban-col-cards" id="kanban-cards-oculta"></div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- ================= DETAIL MODAL / DRAWER ================= -->
+  <div class="modal-backdrop" id="detail-backdrop" hidden></div>
+  <aside class="detail-drawer" id="detail-drawer" hidden>
+    <div class="drawer-header">
+      <div class="drawer-meta-row">
+        <span class="detail-source-meta mono" id="detail-source-meta">GUPY · HOJE</span>
+        <button type="button" class="icon-btn mono" id="btn-close-detail">✕</button>
+      </div>
+      <h2 class="detail-title" id="detail-title">Título da Vaga</h2>
+      <div class="detail-meta-tags">
+        <span class="detail-company" id="detail-company">Empresa</span>
+        <span class="meta-dot"></span>
+        <span class="detail-place mono" id="detail-place">Local não informado</span>
+        <span class="detail-salary mono" id="detail-salary"></span>
+      </div>
+    </div>
+
+    <!-- Match Score Box -->
+    <div class="detail-score-box">
+      <div class="detail-score-val mono" id="detail-score-val">90</div>
+      <div class="detail-score-bar-wrap">
+        <span class="detail-score-lbl mono">aderência ao seu perfil</span>
+        <div class="detail-bar-track">
+          <div class="detail-bar-fill" id="detail-bar-fill"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Why it entered radar / Rationale -->
+    <div class="detail-section">
+      <span class="detail-sec-title mono">por que entrou no radar</span>
+      <div class="detail-reasons-list" id="detail-reasons-list"></div>
+      <div class="detail-gap-box" id="detail-gap-box" hidden>
+        <span class="gap-sign mono">–</span>
+        <span class="gap-text" id="detail-gap-text"></span>
+      </div>
+    </div>
+
+    <!-- Strengths Section (O que domina) -->
+    <div class="detail-section" id="detail-strengths-section">
+      <span class="detail-sec-title mono" style="color: var(--accent);">✅ O que você domina para essa vaga</span>
+      <div class="strengths-list" id="detail-strengths-list"></div>
+    </div>
+
+    <!-- Gaps Section (Pontos de atenção) -->
+    <div class="detail-section" id="detail-gaps-section">
+      <span class="detail-sec-title mono" style="color: var(--acid);">⚠️ Pontos de atenção & Gaps</span>
+      <div class="gaps-list" id="detail-gaps-list"></div>
+    </div>
+
+    <!-- Sub-scores Breakdown -->
+    <div class="detail-section" id="detail-subscores-section">
+      <span class="detail-sec-title mono">avaliação detalhada por pilares</span>
+      <div class="subscores-grid">
+        <div class="subscore-item">
+          <div class="subscore-header">
+            <span class="subscore-lbl mono">Domínio (IA / Nocode)</span>
+            <span class="subscore-val mono" id="subscore-domain-val">0%</span>
+          </div>
+          <div class="subscore-bar-track">
+            <div class="subscore-bar-fill" id="subscore-domain-fill"></div>
+          </div>
+        </div>
+        <div class="subscore-item">
+          <div class="subscore-header">
+            <span class="subscore-lbl mono">Competências & Stack</span>
+            <span class="subscore-val mono" id="subscore-skills-val">0%</span>
+          </div>
+          <div class="subscore-bar-track">
+            <div class="subscore-bar-fill" id="subscore-skills-fill"></div>
+          </div>
+        </div>
+        <div class="subscore-item">
+          <div class="subscore-header">
+            <span class="subscore-lbl mono">Nível / Senioridade</span>
+            <span class="subscore-val mono" id="subscore-seniority-val">0%</span>
+          </div>
+          <div class="subscore-bar-track">
+            <div class="subscore-bar-fill" id="subscore-seniority-fill"></div>
+          </div>
+        </div>
+        <div class="subscore-item">
+          <div class="subscore-header">
+            <span class="subscore-lbl mono">Localização / Modelo</span>
+            <span class="subscore-val mono" id="subscore-location-val">0%</span>
+          </div>
+          <div class="subscore-bar-track">
+            <div class="subscore-bar-fill" id="subscore-location-fill"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stack Cited -->
+    <div class="detail-section">
+      <span class="detail-sec-title mono">stack citada</span>
+      <div class="detail-stack-pills" id="detail-stack-pills"></div>
+    </div>
+
+    <!-- Full Job Description Toggle -->
+    <div class="detail-section">
+      <details class="desc-details" id="desc-details">
+        <summary class="desc-summary mono">Ver descrição completa da vaga</summary>
+        <div class="desc-content" id="detail-full-description"></div>
+      </details>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="detail-actions">
+      <button type="button" class="btn-primary-apply mono" id="detail-btn-apply">Candidatar</button>
+      <a href="#" target="_blank" rel="noopener noreferrer" class="btn-secondary-link mono" id="detail-btn-link">Abrir vaga ↗</a>
+      <button type="button" class="btn-secondary-hide mono" id="detail-btn-hide">Mover para Não Compatível</button>
+    </div>
+  </aside>
+
+  <!-- ================= CONFIGURATION DRAWER ================= -->
+  <div class="modal-backdrop" id="config-backdrop" hidden></div>
+  <aside class="config-drawer" id="config-drawer" hidden>
+    <div class="drawer-header">
+      <div class="drawer-meta-row">
+        <span class="detail-source-meta mono">CONFIGURAÇÕES DE IA & TERMOS</span>
+        <button type="button" class="icon-btn mono" id="btn-close-config">✕</button>
+      </div>
+      <h2 class="drawer-title">Como a IA te avalia</h2>
+    </div>
+
+    <div class="config-tabs">
+      <button type="button" class="config-tab-btn is-active mono" data-cfg-tab="resume">Currículo</button>
+      <button type="button" class="config-tab-btn mono" data-cfg-tab="queries">Termos de Busca</button>
+      <button type="button" class="config-tab-btn mono" data-cfg-tab="exclusions">Termos Proibidos</button>
+      <button type="button" class="config-tab-btn mono" data-cfg-tab="maintenance">Manutenção</button>
+    </div>
+
+    <div class="config-pane" id="cfg-pane-resume">
+      <span class="cfg-note">Texto-base que o Gemini compara com cada vaga coletada.</span>
+      <textarea id="cfg-resume-text" class="cfg-textarea" spellcheck="false" placeholder="Cole seu currículo em texto puro aqui..."></textarea>
+      <div class="cfg-actions">
+        <button type="button" class="btn-primary-save mono" id="btn-save-resume">Salvar Currículo</button>
+      </div>
+    </div>
+
+    <div class="config-pane" id="cfg-pane-queries" hidden>
+      <span class="cfg-note">Termos pesquisados nas fontes de vagas (1 por linha).</span>
+      
+      <label class="cfg-field-lbl mono">Gupy Queries:</label>
+      <textarea id="cfg-gupy-queries" class="cfg-textarea cfg-short" spellcheck="false"></textarea>
+
+      <label class="cfg-field-lbl mono">LinkedIn Queries:</label>
+      <textarea id="cfg-linkedin-queries" class="cfg-textarea cfg-short" spellcheck="false"></textarea>
+
+      <label class="cfg-field-lbl mono">Remotar Queries:</label>
+      <textarea id="cfg-remotar-queries" class="cfg-textarea cfg-short" spellcheck="false"></textarea>
+
+      <label class="cfg-field-lbl mono">Programathor Queries:</label>
+      <textarea id="cfg-programathor-queries" class="cfg-textarea cfg-short" spellcheck="false"></textarea>
+
+      <div class="cfg-actions">
+        <button type="button" class="btn-primary-save mono" id="btn-save-queries">Salvar Termos de Busca</button>
+      </div>
+    </div>
+
+    <div class="config-pane" id="cfg-pane-exclusions" hidden>
+      <span class="cfg-note">Palavras e cargos que causam descarte imediato da vaga antes de acionar a IA (1 por linha).</span>
+      <textarea id="cfg-exclusions-text" class="cfg-textarea" spellcheck="false" placeholder="sênior&#10;gerente&#10;diretor&#10;estágio..."></textarea>
+      <div class="cfg-actions">
+        <button type="button" class="btn-primary-save mono" id="btn-save-exclusions">Salvar Termos Proibidos</button>
+      </div>
+    </div>
+
+    <div class="config-pane" id="cfg-pane-maintenance" hidden>
+      <span class="cfg-note">Ações de gestão do banco de dados local.</span>
+      <div class="cfg-policy-grid">
+        <label class="cfg-label">Idade máxima (dias)<input id="cfg-max-age" class="cfg-input" type="number" min="0" max="3650"></label>
+        <label class="cfg-label">Score mínimo<input id="cfg-min-score" class="cfg-input" type="number" min="0" max="100"></label>
+      </div>
+      <label class="cfg-check"><input id="cfg-filter-gupy-date" type="checkbox"> Filtrar vagas Gupy pela data publicada</label>
+      <label class="cfg-check"><input id="cfg-allow-unknown-location" type="checkbox"> Aceitar localização não informada para triagem</label>
+      <button type="button" class="btn-primary-save mono" id="btn-save-policy">Salvar Política</button>
+      <div class="maint-group">
+        <div class="maint-item">
+          <div>
+            <strong>Ocultar todas as novas</strong>
+            <p>Move todas as vagas com status "Nova" para "Ocultas".</p>
+          </div>
+          <button type="button" class="btn-maint mono" id="btn-clear-new">Ocultar novas</button>
+        </div>
+        <div class="maint-item">
+          <div>
+            <strong>Limpeza profunda</strong>
+            <p>Remove permanentemente vagas novas e não compatíveis, preservando as enviadas.</p>
+          </div>
+          <button type="button" class="btn-maint-flag mono" id="btn-purge-db">Executar limpeza</button>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ================= TOAST NOTIFICATION WITH UNDO ================= -->
+  <div class="toast-popup" id="toast-popup" hidden>
+    <span class="toast-msg" id="toast-msg">Mensagem</span>
+    <button type="button" class="btn-toast-undo mono" id="btn-toast-undo">Desfazer</button>
+  </div>
+
+  <script src="job-model.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
